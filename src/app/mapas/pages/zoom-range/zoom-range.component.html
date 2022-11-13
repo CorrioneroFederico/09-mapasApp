@@ -6,7 +6,13 @@
       zoom: {{this.zoomLevel | number: '2.2-2' }} -
       lat,long: [x,y]
     </label>
-    <input type="range" class="form-range">
+    <input type="range" class="form-range"
+      [value]="zoomLevel"
+      min="6"
+      max="18"
+      #zoomInput
+      (input)="cambioZoom(zoomInput.value)"
+    >
   </div>
   <div class="col-12">
     <button class="btn btn-primary" (click)="zoomOut()"> - </button>
