@@ -1,9 +1,10 @@
-import { Component, ElementRef, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import * as mapboxgl from 'mapbox-gl';
 
 interface Marcadores{
   color : string;
-  marker: mapboxgl.Marker;
+  marker?: mapboxgl.Marker;
+  centro?: [number,number];
 }
 @Component({
   selector: 'app-marcadores',
@@ -44,6 +45,7 @@ export class MarcadoresComponent implements AfterViewInit {
     });
 
     // new mapboxgl.Marker().setLngLat(this.coordenadas).addTo(this.map);
+    this.leerMarcadorLocalStorage();
   }
 
   agregar(){
@@ -58,10 +60,61 @@ export class MarcadoresComponent implements AfterViewInit {
     this.marcadores.push({
       color, marker: nuevoMarcador
     });
+
+    this.guardarMarcadorLocalStorage();
+
+    nuevoMarcador.on('dragend',()=>{
+      this.guardarMarcadorLocalStorage();
+    });
   }
 
-  ir(){
+  ir( index : number){
+    this.map.flyTo({
+      center: this.marcadores[index].marker!.getLngLat()
+    });
+  }
 
+  guardarMarcadorLocalStorage(){
+    const lngLats: Marcadores[]=[];
+    this.marcadores.forEach(m=>{
+      const color = m.color;
+      const { lng, lat } = m.marker!.getLngLat();
+
+      lngLats.push({
+        color,
+        centro: [lng,lat]
+      })
+    });
+    localStorage.setItem('marcadores', JSON.stringify(lngLats));
+  }
+
+  leerMarcadorLocalStorage(){
+
+    if(!localStorage.getItem('marcadores')) return;
+
+    const lngLats: Marcadores[] = JSON.parse(localStorage.getItem('marcadores')!);
+
+    lngLats.forEach(m => {
+    const nuevoMarcador = new mapboxgl.Marker({
+        draggable: true,
+        color: m.color
+      })
+        .setLngLat(m.centro!)
+        .addTo(this.map);
+        this.marcadores.push({
+          color: m.color,
+          marker: nuevoMarcador
+        });
+        nuevoMarcador.on('dragend',()=>{
+          this.guardarMarcadorLocalStorage();
+        })
+    });
+  }
+
+  borrar( index : number){
+    this.marcadores[index].marker?.remove();
+    this.marcadores.splice(index,1);
+    this.guardarMarcadorLocalStorage();
   }
 
 }
